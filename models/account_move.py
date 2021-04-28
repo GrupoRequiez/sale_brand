@@ -25,25 +25,27 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class AccountInvoice(models.Model):
-    _name = "account.invoice"
-    _inherit = 'account.invoice'
+class AccountMove(models.Model):
+    _name = "account.move"
+    _inherit = 'account.move'
 
     brand = fields.Char('Brand',
-                            compute='_compute_brand_id',
-                            search='_search_brand',
-                            readonly=True)
+                        compute='_compute_brand_id',
+                        search='_search_brand',
+                        readonly=True)
 
-    @api.one
+    # @api.one
     def _compute_brand_id(self):
-        if self.invoice_line_ids:
-            if self.invoice_line_ids[0].product_id.product_brand_id:
-                self.brand = self.invoice_line_ids[0].product_id.product_brand_id.name
+        for move in self:
+            if move.invoice_line_ids and move.move_type not in ('entry', 'out_receipt', 'in_receipt'):
+                if move.invoice_line_ids[0].product_id.product_brand_id:
+                    move.brand = self.invoice_line_ids[0].product_id.product_brand_id.name
+        return move.brand
 
-    @api.multi
+    # @api.multi
     def _search_brand(self, operator, value):
-        AccountInvoice = self.env['account.invoice']
-        invoices = AccountInvoice.search([])
+        AccountMove = self.env['account.move']
+        invoices = AccountMove.search([])
         list_ids = []
         for invoice in invoices:
             if invoice.invoice_line_ids:
